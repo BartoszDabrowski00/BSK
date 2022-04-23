@@ -1,4 +1,6 @@
 import sys
+import logging
+
 from main_window import MainWindow
 from PyQt5.QtWidgets import QApplication
 
@@ -13,5 +15,7 @@ def main() -> None:
     except:
         print("Closing the application")
 
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()
