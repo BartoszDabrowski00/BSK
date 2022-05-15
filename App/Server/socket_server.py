@@ -45,8 +45,13 @@ class Server:
             conn.close()
             self.connections.pop(msg.sender_id)
             return False
-        else:
+        elif msg.type == MessageTypes.TEXT.value:
             log.info(f'Message from: {msg.sender_id} | Content: {msg.msg}')
+            receiver_connection = self.get_receiver_connection(msg.receiver_id)
+            if receiver_connection:
+                self.message_sender.send_message(receiver_connection, msg)
+        elif msg.type == MessageTypes.FILE.value:
+            log.info(f'File from from: {msg.sender_id} to: {msg.receiver_id}')
             receiver_connection = self.get_receiver_connection(msg.receiver_id)
             if receiver_connection:
                 self.message_sender.send_message(receiver_connection, msg)
