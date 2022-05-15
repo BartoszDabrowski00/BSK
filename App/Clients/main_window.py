@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 
 
 class MainWindow(QDialog):
+
     def __init__(self) -> None:
         super(MainWindow, self).__init__()
         loadUi("main_window.ui", self)
@@ -39,7 +40,8 @@ class MainWindow(QDialog):
                 if not self.message_handler:
                     self.message_handler = MessageHandler(
                         id=self.id,
-                        message_receiver=UiMessageReceiver(self.text_edit)
+                        message_receiver=UiMessageReceiver(self.text_edit),
+                        progress_bar=self.progress_bar
                     )
                 self.message_handler.connect()
                 self.connected = True
@@ -58,4 +60,6 @@ class MainWindow(QDialog):
         log.info(f'Sending file: {file_path}')
         receiver_id = self.receiver_id.text()
         if receiver_id:
+            self.progress_bar.show()
             self.message_handler.send_file(file_path, receiver_id)
+            log.info(f'File sent')

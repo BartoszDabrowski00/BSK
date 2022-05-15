@@ -1,9 +1,12 @@
+import logging
 import pickle
 from socket import socket
 
 from PyQt5.QtWidgets import QTextEdit
 
 from App.Utils.message import Message, MessageTypes
+
+log = logging.getLogger(__name__)
 
 
 class MessageReceiver:
@@ -32,10 +35,16 @@ class UiMessageReceiver(MessageReceiver):
                 if msg.type == MessageTypes.TEXT.value:
                     self.text_edit.append(f'{msg.sender_id}: {msg.msg}')
                 elif msg.type == MessageTypes.FILE.value:
-                    self.save_file(msg)
+                    self.download_file(msg, conn)
             except:
                 pass
 
-    def save_file(self, msg: Message) -> None:
-        with open('sent_file', 'w') as file:
-            file.write(msg.msg)
+    def download_file(self, msg: Message, conn: socket) -> None:
+        messages = []
+        file_parts = int(msg.msg)
+        extension = super().get_message(conn).msg
+        log.info(f'Downloading file in {file_parts} parts | extension {extension}')
+        for i in range(file_parts):
+            messages.append(super().get_message(conn).msg)
+        with open(f'sent_file{extension}', 'w+b') as file:
+            file.write(b''.join(messages))
