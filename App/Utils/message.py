@@ -11,7 +11,7 @@ class MessageTypes(Enum):
 
 class Message:
     def __init__(self, id: str, type: str, receiver_id: str = None,  msg: Union[str, bytes, int] = None,
-                 encryption_mode: int = None, file_parts: int = None, extension: str = None) -> None:
+                 encryption_mode: int = None, file_parts: int = None, extension: str = None, file_part_position: int = None) -> None:
         self.sender_id = id
         self.receiver_id = receiver_id
         self.msg = msg
@@ -19,3 +19,4 @@ class Message:
         self.encryption_mode = encryption_mode
         self.file_parts = file_parts
         self.extension = extension
+        self.file_part_position = file_part_position

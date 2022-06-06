@@ -26,5 +26,5 @@ class MessageSender:
             msg.encryption_mode = encryption_mode
         pickled_msg = pickle.dumps(msg)
         msg_size = self.get_header_bytes(pickled_msg)
-        connection.send(msg_size)
-        connection.send(pickled_msg)
+        connection.sendall(msg_size)
+        connection.sendall(pickled_msg)

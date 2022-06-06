@@ -66,7 +66,8 @@ class MessageHandler:
                         receiver_id=receiver_id,
                         msg=data,
                         file_parts=num_of_parts,
-                        extension=extension
+                        extension=extension,
+                        file_part_position=idx
                     )
                     self.message_sender.send_message(
                         self.client,
@@ -74,6 +75,7 @@ class MessageHandler:
                         key=key,
                         encryption_mode=encryption_mode
                     )
+                    log.info(f'Send msg no {idx} of {num_of_parts}')
                 else:
                     break
 
