@@ -5,6 +5,7 @@ from socket import socket
 from PyQt5.QtWidgets import QTextEdit
 
 from App.Utils.message import Message, MessageTypes
+from App.Utils.message_encryptor import Encryptions
 
 log = logging.getLogger(__name__)
 
@@ -13,19 +14,25 @@ class MessageReceiver:
     HEADER_SIZE = 256
     FORMAT = 'utf-8'
 
-    def __init__(self):
-        pass
+    def __init__(self, id: str, session_key: bytes = None):
+        self.id = id
+        self.key = session_key
 
     def get_message(self, conn: socket) -> Message:
         msg_length = int(conn.recv(self.HEADER_SIZE).decode(self.FORMAT))
         if msg_length:
             msg = pickle.loads(conn.recv(msg_length))
+            if msg.type not in [MessageTypes.CONNECT.value, MessageTypes.DISCONNECT.value] and self.id == msg.receiver_id:
+                encryption_mode = msg.encryption_mode
+                msg.msg = Encryptions.decrypt_message(self.key, encryption_mode, msg.msg)
+                if msg.type == MessageTypes.TEXT.value:
+                    msg.msg = msg.msg.decode(self.FORMAT)
             return msg
 
 
 class UiMessageReceiver(MessageReceiver):
-    def __init__(self, text_edit: QTextEdit):
-        super().__init__()
+    def __init__(self, id: str, text_edit: QTextEdit):
+        super().__init__(id)
         self.text_edit = text_edit
 
     def get_message(self, conn: socket) -> None:
@@ -40,11 +47,11 @@ class UiMessageReceiver(MessageReceiver):
                 pass
 
     def download_file(self, msg: Message, conn: socket) -> None:
-        messages = []
-        file_parts = int(msg.msg)
-        extension = super().get_message(conn).msg
+        file_parts = int(msg.file_parts)
+        extension = msg.extension
         log.info(f'Downloading file in {file_parts} parts | extension {extension}')
-        for i in range(file_parts):
+        messages = [msg.msg]
+        for i in range(file_parts - 1):
             messages.append(super().get_message(conn).msg)
         with open(f'sent_file{extension}', 'w+b') as file:
             file.write(b''.join(messages))
