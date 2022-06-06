@@ -67,3 +67,4 @@ class UiMessageReceiver(MessageReceiver):
         messages = list(map(lambda x: x.msg, sorted(messages, key=lambda x: x.file_part_position)))
         with open(f'sent_file{extension}', 'w+b') as file:
             file.write(b''.join(messages))
+
