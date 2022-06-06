@@ -19,16 +19,24 @@ class MessageReceiver:
         self.key = session_key
 
     def get_message(self, conn: socket) -> Message:
-        msg_length = int(conn.recv(self.HEADER_SIZE).decode(self.FORMAT))
-        if msg_length:
-            msg = conn.recv(msg_length)
-            msg = pickle.loads(msg)
-            if msg.type not in [MessageTypes.CONNECT.value, MessageTypes.DISCONNECT.value] and self.id == msg.receiver_id:
-                encryption_mode = msg.encryption_mode
-                msg.msg = Encryptions.decrypt_message(self.key, encryption_mode, msg.msg)
-                if msg.type == MessageTypes.TEXT.value:
-                    msg.msg = msg.msg.decode(self.FORMAT)
-            return msg
+        try:
+            msg_length = []
+            while len(b''.join(msg_length)) < self.HEADER_SIZE:
+                msg_length.append(conn.recv(self.HEADER_SIZE))
+            msg_length = int(b''.join(msg_length).decode(self.FORMAT))
+            if msg_length:
+                data = []
+                while len(b''.join(data)) < msg_length:
+                    data.append(conn.recv(msg_length))
+                msg = pickle.loads(b''.join(data))
+                if msg.type not in [MessageTypes.CONNECT.value,  MessageTypes.DISCONNECT.value] and self.id == msg.receiver_id:
+                    encryption_mode = msg.encryption_mode
+                    msg.msg = Encryptions.decrypt_message(self.key, encryption_mode, msg.msg)
+                    if msg.type == MessageTypes.TEXT.value:
+                        msg.msg = msg.msg.decode(self.FORMAT)
+                return msg
+        except Exception as e:
+            pass
 
 
 class UiMessageReceiver(MessageReceiver):
@@ -51,9 +59,11 @@ class UiMessageReceiver(MessageReceiver):
         file_parts = int(msg.file_parts)
         extension = msg.extension
         log.info(f'Downloading file in {file_parts} parts | extension {extension}')
+        messages = [msg]
+        while len(messages) != file_parts:
+            msg = super().get_message(conn)
+            log.info(f'Wrote part {msg.file_part_position} of {file_parts}')
+            messages.append(msg)
+        messages = list(map(lambda x: x.msg, sorted(messages, key=lambda x: x.file_part_position)))
         with open(f'sent_file{extension}', 'w+b') as file:
-            file.write(msg.msg)
-            for i in range(file_parts - 1):
-                log.info(f'Wrote part {i} of {file_parts}')
-                msg = (super().get_message(conn).msg)
-                file.write(msg)
+            file.write(b''.join(messages))
