@@ -91,4 +91,3 @@ class MessageHandler:
         extension = os.path.splitext(file_path)[1]
         file_parts = math.ceil(os.path.getsize(file_path) / self.MAX_MESSAGE_SIZE_BYTES)
         return file_parts, extension
-

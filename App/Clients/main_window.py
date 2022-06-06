@@ -96,8 +96,3 @@ class MainWindow(QDialog):
             self.password = None
             return
         log.info('User set new password')
-
-
-
-
-
