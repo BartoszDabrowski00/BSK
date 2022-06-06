@@ -37,20 +37,30 @@ class MessageHandler:
         self.receiving_thread = threading.Thread(target=self.message_receiver.get_message, args=[self.client])
         self.receiving_thread.start()
 
-    def send_text(self, msg: str, receiver_id: str) -> None:
+    def send_text(self, msg: str, receiver_id: str, encryption_mode: int = None, key: bytes = None) -> None:
         msg = Message(
             id=self.id,
             receiver_id=receiver_id,
             msg=msg,
             type=MessageTypes.TEXT.value
         )
-        self.message_sender.send_message(self.client, msg)
+        self.message_sender.send_message(
+            self.client,
+            msg,
+            key=key,
+            encryption_mode=encryption_mode
+        )
 
-    def send_file(self, file_path: str, receiver_id: str) -> None:
+    def send_file(self, file_path: str, receiver_id: str, key: bytes, encryption_mode: int) -> None:
         messages = self.split_file(file_path, receiver_id)
         for idx, msg in enumerate(messages):
-            self.progress_bar.setValue((idx+1)/len(messages)*100)
-            self.message_sender.send_message(self.client, msg)
+            self.progress_bar.setValue((idx + 1) / len(messages) * 100)
+            self.message_sender.send_message(
+                self.client,
+                msg,
+                key=key,
+                encryption_mode=encryption_mode
+            )
 
     def disconnect(self) -> None:
         msg = Message(
@@ -61,7 +71,8 @@ class MessageHandler:
         self.client.close()
 
     def split_file(self, file_path: str, receiver_id: str) -> [Message]:
-        messages = self.create_file_headers(file_path, receiver_id)
+        num_of_parts, extension = self.create_file_headers(file_path, receiver_id)
+        messages = []
         with open(file_path, 'r+b') as source_file:
             while True:
                 data = source_file.read(self.MAX_MESSAGE_SIZE_BYTES)
@@ -70,7 +81,9 @@ class MessageHandler:
                         id=self.id,
                         type=MessageTypes.FILE.value,
                         receiver_id=receiver_id,
-                        msg=data
+                        msg=data,
+                        file_parts=num_of_parts,
+                        extension=extension
                     ))
                 else:
                     break
@@ -79,5 +92,4 @@ class MessageHandler:
     def create_file_headers(self, file_path: str, receiver_id: str) -> [Message]:
         extension = os.path.splitext(file_path)[1]
         file_parts = math.ceil(os.path.getsize(file_path) / self.MAX_MESSAGE_SIZE_BYTES)
-        return [Message(id=self.id, type=MessageTypes.FILE.value, receiver_id=receiver_id, msg=file_parts),
-                Message(id=self.id, type=MessageTypes.FILE.value, receiver_id=receiver_id, msg=extension)]
+        return file_parts, extension

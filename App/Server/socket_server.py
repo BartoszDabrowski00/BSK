@@ -12,13 +12,14 @@ log = logging.getLogger(__name__)
 class Server:
 
     def __init__(self, port: int, address: str) -> None:
+        self.id = 'SERVER'
         self.port = port
         self.address = address
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.address, self.port))
         self.connections = {}
         self.message_sender = MessageSender()
-        self.message_receiver = MessageReceiver()
+        self.message_receiver = MessageReceiver(self.id)
         self.wait_for_connection()
 
     def wait_for_connection(self) -> None:
