@@ -52,15 +52,30 @@ class MessageHandler:
         )
 
     def send_file(self, file_path: str, receiver_id: str, key: bytes, encryption_mode: int) -> None:
-        messages = self.split_file(file_path, receiver_id)
-        for idx, msg in enumerate(messages):
-            self.progress_bar.setValue((idx + 1) / len(messages) * 100)
-            self.message_sender.send_message(
-                self.client,
-                msg,
-                key=key,
-                encryption_mode=encryption_mode
-            )
+        num_of_parts, extension = self.create_file_headers(file_path, receiver_id)
+        with open(file_path, 'r+b') as source_file:
+            idx = 0
+            while True:
+                data = source_file.read(self.MAX_MESSAGE_SIZE_BYTES)
+                if data:
+                    self.progress_bar.setValue((idx + 1) / num_of_parts * 100)
+                    idx += 1
+                    msg = Message(
+                        id=self.id,
+                        type=MessageTypes.FILE.value,
+                        receiver_id=receiver_id,
+                        msg=data,
+                        file_parts=num_of_parts,
+                        extension=extension
+                    )
+                    self.message_sender.send_message(
+                        self.client,
+                        msg,
+                        key=key,
+                        encryption_mode=encryption_mode
+                    )
+                else:
+                    break
 
     def disconnect(self) -> None:
         msg = Message(
@@ -69,25 +84,6 @@ class MessageHandler:
         )
         self.message_sender.send_message(self.client, msg)
         self.client.close()
-
-    def split_file(self, file_path: str, receiver_id: str) -> [Message]:
-        num_of_parts, extension = self.create_file_headers(file_path, receiver_id)
-        messages = []
-        with open(file_path, 'r+b') as source_file:
-            while True:
-                data = source_file.read(self.MAX_MESSAGE_SIZE_BYTES)
-                if data:
-                    messages.append(Message(
-                        id=self.id,
-                        type=MessageTypes.FILE.value,
-                        receiver_id=receiver_id,
-                        msg=data,
-                        file_parts=num_of_parts,
-                        extension=extension
-                    ))
-                else:
-                    break
-        return messages
 
     def create_file_headers(self, file_path: str, receiver_id: str) -> [Message]:
         extension = os.path.splitext(file_path)[1]
