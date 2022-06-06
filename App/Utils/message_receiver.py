@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class MessageReceiver:
-    HEADER_SIZE = 256
+    HEADER_SIZE = 512
     FORMAT = 'utf-8'
 
     def __init__(self, id: str, session_key: bytes = None):
@@ -21,7 +21,8 @@ class MessageReceiver:
     def get_message(self, conn: socket) -> Message:
         msg_length = int(conn.recv(self.HEADER_SIZE).decode(self.FORMAT))
         if msg_length:
-            msg = pickle.loads(conn.recv(msg_length))
+            msg = conn.recv(msg_length)
+            msg = pickle.loads(msg)
             if msg.type not in [MessageTypes.CONNECT.value, MessageTypes.DISCONNECT.value] and self.id == msg.receiver_id:
                 encryption_mode = msg.encryption_mode
                 msg.msg = Encryptions.decrypt_message(self.key, encryption_mode, msg.msg)
@@ -50,8 +51,9 @@ class UiMessageReceiver(MessageReceiver):
         file_parts = int(msg.file_parts)
         extension = msg.extension
         log.info(f'Downloading file in {file_parts} parts | extension {extension}')
-        messages = [msg.msg]
-        for i in range(file_parts - 1):
-            messages.append(super().get_message(conn).msg)
         with open(f'sent_file{extension}', 'w+b') as file:
-            file.write(b''.join(messages))
+            file.write(msg.msg)
+            for i in range(file_parts - 1):
+                log.info(f'Wrote part {i} of {file_parts}')
+                msg = (super().get_message(conn).msg)
+                file.write(msg)

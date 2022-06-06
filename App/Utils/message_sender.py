@@ -6,7 +6,7 @@ from App.Utils.message_encryptor import Encryptions
 
 
 class MessageSender:
-    HEADER_SIZE = 256
+    HEADER_SIZE = 512
     FORMAT = 'utf-8'
 
     def __init__(self):
