@@ -7,6 +7,7 @@ from Crypto.Random import get_random_bytes
 from Crypto.Hash import SHA256
 from base64 import b64encode, b64decode
 from Crypto.Util.Padding import pad, unpad
+from message_encryptor import Encryptions
 
 log = logging.getLogger(__name__)
 
@@ -24,14 +25,24 @@ class SecurityKeysHandler:
     def __init__(self):
         self.private_key = None
         self.public_key = None
-        self.session_keys = None
+        self.session_keys = {}
 
-    def generate_session_key(self,) -> bool:
+    def generate_session_key(self, sender_id: str, public_key: bytes) -> bytes:
         if self.public_key is None or self.private_key is None:
             log.warning('In order to generate session key, load rsa keys')
 
-        #session_key = get_random_bytes(16)
-        return True
+        session_key = get_random_bytes(16)
+        encrypted_session_key = Encryptions.encrypt_with_public_key(public_key, session_key)
+        self.add_session(sender_id, session_key)
+        return encrypted_session_key
+
+    def load_session_key(self, msg: bytes) -> None:
+        session_key = Encryptions.decrypt_with_private_key(self.private_key, msg.msg)
+        self.add_session(msg.sender_id, session_key)
+
+    def add_session(self, sender_id: str, session_key: bytes) -> None:
+        self.session_keys[sender_id] = session_key
+        log.info(f'Session key added | Receiver id {sender_id} | Key {session_key}')
 
     def generate_rsa_keys(self) -> None:
         key = RSA.generate(2048)

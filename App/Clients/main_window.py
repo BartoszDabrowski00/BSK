@@ -28,7 +28,6 @@ class MainWindow(QDialog):
         self.message_receiver = None
         self.connected = False
         self.id = None
-        self.session_key = None
         self.password = None
 
     def on_id_button_click(self) -> None:
@@ -39,11 +38,17 @@ class MainWindow(QDialog):
         if self.connected:
             message = self.message_line.text()
             receiver_id = self.receiver_id.text()
+            is_session_established = self.check_session(receiver_id)
+
+            if not is_session_established:
+                self.message_handler.send_public_key(self.security_keys_handler.public_key, receiver_id)
+                return
+
             encryption_mode = MODE_CBC if self.cbc_radio_button.isChecked() else MODE_ECB
             self.message_handler.send_text(
                 message,
                 encryption_mode=encryption_mode,
-                key=self.session_key,
+                key=self.security_keys_handler.session_keys[receiver_id],
                 receiver_id=receiver_id
             )
             self.add_message(message)
@@ -53,7 +58,7 @@ class MainWindow(QDialog):
             if not self.connected:
                 log.info(f'Connecting to server')
                 if not self.message_handler:
-                    self.message_receiver = UiMessageReceiver(self.id, self.text_edit)
+                    self.message_receiver = UiMessageReceiver(self.id, self.text_edit, self.security_keys_handler)
                     self.message_handler = MessageHandler(
                         id=self.id,
                         message_receiver=self.message_receiver,
@@ -76,9 +81,14 @@ class MainWindow(QDialog):
         log.info(f'Sending file: {file_path}')
         receiver_id = self.receiver_id.text()
         if receiver_id:
+            is_session_established = self.check_session(receiver_id)
+            if not is_session_established:
+                self.message_handler.send_public_key(self.security_keys_handler.public_key, receiver_id)
+                return
             self.progress_bar.show()
             encryption_mode = MODE_CBC if self.cbc_radio_button.isChecked() else MODE_ECB
-            self.message_handler.send_file(file_path, receiver_id, self.session_key, encryption_mode)
+            self.message_handler.send_file(file_path, receiver_id, self.security_keys_handler.session_keys[receiver_id],
+                                           encryption_mode)
             log.info(f'File sent')
 
     def on_keys_button_click(self) -> None:
@@ -96,3 +106,9 @@ class MainWindow(QDialog):
             self.password = None
             return
         log.info('User set new password')
+
+    def check_session(self, receiver_id):
+        is_connection_established = receiver_id in self.security_keys_handler.session_keys
+        if not is_connection_established:
+            log.info('Session not established')
+        return is_connection_established

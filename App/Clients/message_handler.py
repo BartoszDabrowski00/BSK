@@ -29,6 +29,7 @@ class MessageHandler:
     def connect(self) -> None:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.connect((self.SERVER_ADDRESS, self.PORT))
+        self.message_receiver.client = self.client
         msg = Message(
             id=self.id,
             type=MessageTypes.CONNECT.value
