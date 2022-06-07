@@ -1,10 +1,9 @@
-from Crypto.Cipher import AES
+from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.Cipher.AES import MODE_CBC, MODE_ECB
 from Crypto.Util.Padding import pad, unpad
-
+from Crypto.PublicKey import RSA
 
 IV_SIZE_BYTES = 16
-
 
 class Encryptions:
 
@@ -46,3 +45,14 @@ class Encryptions:
     @staticmethod
     def decrypt_ecb_message(key: bytes, mode: int, message: bytes):
         return unpad(AES.new(key, mode).decrypt(message), AES.block_size)
+
+    @staticmethod
+    def encrypt_with_public_key(public_key, message):
+        cipher_rsa = PKCS1_OAEP.new(RSA.import_key(public_key))
+        enc_key = cipher_rsa.encrypt(message)
+        return enc_key
+
+    @staticmethod
+    def decrypt_with_private_key(private_key, cipher):
+        cipher_rsa = PKCS1_OAEP.new(RSA.import_key(private_key))
+        return cipher_rsa.decrypt(cipher)

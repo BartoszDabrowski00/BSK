@@ -7,6 +7,8 @@ class MessageTypes(Enum):
     DISCONNECT = 'DISCONNECT'
     TEXT = 'TEXT'
     FILE = 'FILE'
+    PUBLIC_KEY = 'PUBLIC_KEY'
+    SESSION_KEY = 'SESSION_KEY'
 
 
 class Message:

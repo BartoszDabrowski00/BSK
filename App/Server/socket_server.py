@@ -47,12 +47,23 @@ class Server:
             self.connections.pop(msg.sender_id)
             return False
         elif msg.type == MessageTypes.TEXT.value:
-            log.info(f'Message from: {msg.sender_id} | Content: {msg.msg}')
+            log.info(f'Message from: {msg.sender_id} | Content: {msg.msg} | to: {msg.receiver_id}')
             receiver_connection = self.get_receiver_connection(msg.receiver_id)
             if receiver_connection:
                 self.message_sender.send_message(receiver_connection, msg)
         elif msg.type == MessageTypes.FILE.value:
             log.info(f'File from from: {msg.sender_id} to: {msg.receiver_id}')
+            receiver_connection = self.get_receiver_connection(msg.receiver_id)
+            if receiver_connection:
+                self.message_sender.send_message(receiver_connection, msg)
+        elif msg.type == MessageTypes.PUBLIC_KEY.value:
+            log.info(f'Public key from: {msg.sender_id} to: {msg.receiver_id} pk: {msg.msg}')
+            receiver_connection = self.get_receiver_connection(msg.receiver_id)
+            if receiver_connection:
+                self.message_sender.send_message(receiver_connection, msg)
+
+        elif msg.type == MessageTypes.SESSION_KEY.value:
+            log.info(f'Session key from: {msg.sender_id} to: {msg.receiver_id} key: {msg.msg}')
             receiver_connection = self.get_receiver_connection(msg.receiver_id)
             if receiver_connection:
                 self.message_sender.send_message(receiver_connection, msg)

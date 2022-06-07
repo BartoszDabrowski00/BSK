@@ -18,7 +18,8 @@ class MessageSender:
         return send_length
 
     def send_message(self, connection: socket, msg: Message, key: bytes = None, encryption_mode: int = None) -> None:
-        if key and encryption_mode and msg.type not in [MessageTypes.CONNECT.value, MessageTypes.DISCONNECT.value]:
+        if key and encryption_mode and msg.type not in [MessageTypes.CONNECT.value, MessageTypes.DISCONNECT.value,
+                                                        MessageTypes.PUBLIC_KEY.value, MessageTypes.SESSION_KEY.value]:
             content = msg.msg
             if msg.type == MessageTypes.TEXT.value:
                 content = content.encode(self.FORMAT)
