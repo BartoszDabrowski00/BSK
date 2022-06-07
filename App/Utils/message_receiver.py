@@ -17,7 +17,6 @@ class MessageReceiver:
 
     def __init__(self, id: str, session_key: bytes = None, security_keys_handler: SecurityKeysHandler = None):
         self.id = id
-        self.key = session_key
         self.security_key_handler = security_keys_handler
 
     def get_message(self, conn: socket) -> Message:
@@ -31,9 +30,12 @@ class MessageReceiver:
                 while len(b''.join(data)) < msg_length:
                     data.append(conn.recv(msg_length))
                 msg = pickle.loads(b''.join(data))
-                if msg.type not in [MessageTypes.CONNECT.value,  MessageTypes.DISCONNECT.value] and self.id == msg.receiver_id:
+                if msg.type not in [MessageTypes.CONNECT.value,  MessageTypes.DISCONNECT.value,
+                                    MessageTypes.PUBLIC_KEY.value, MessageTypes.SESSION_KEY.value]\
+                                    and self.id == msg.receiver_id:
                     encryption_mode = msg.encryption_mode
-                    msg.msg = Encryptions.decrypt_message(self.key, encryption_mode, msg.msg)
+                    key = self.security_key_handler.session_keys[msg.sender_id]
+                    msg.msg = Encryptions.decrypt_message(key, encryption_mode, msg.msg)
                     if msg.type == MessageTypes.TEXT.value:
                         msg.msg = msg.msg.decode(self.FORMAT)
                 return msg

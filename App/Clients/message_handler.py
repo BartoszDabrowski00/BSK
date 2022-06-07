@@ -37,7 +37,17 @@ class MessageHandler:
         self.message_sender.send_message(self.client, msg)
         self.receiving_thread = threading.Thread(target=self.message_receiver.get_message, args=[self.client])
         self.receiving_thread.start()
-
+    def send_public_key(self, public_key: bytes, receiver_id: str):
+        msg = Message(
+            id=self.id,
+            receiver_id=receiver_id,
+            msg=public_key,
+            type=MessageTypes.PUBLIC_KEY.value
+        )
+        self.message_sender.send_message(
+            self.client,
+            msg
+        )
     def send_text(self, msg: str, receiver_id: str, encryption_mode: int = None, key: bytes = None) -> None:
         msg = Message(
             id=self.id,
